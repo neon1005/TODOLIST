@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToDo List</title>
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome (CDN) -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      referrerpolicy="no-referrer"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            boxShadow: {
+              soft: "0 10px 30px rgba(2, 6, 23, 0.10)",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <!-- Background -->
+    <div class="pointer-events-none fixed inset-0 overflow-hidden">
+      <div class="absolute -top-24 left-1/2 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-indigo-500/15 blur-3xl"></div>
+      <div class="absolute -bottom-24 right-1/3 h-72 w-[42rem] rounded-full bg-fuchsia-500/10 blur-3xl"></div>
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,102,241,.18),transparent_55%),radial-gradient(circle_at_0%_60%,rgba(236,72,153,.10),transparent_50%)]"
+      ></div>
+    </div>
+
+    <main class="relative mx-auto max-w-3xl px-4 py-10 sm:py-14">
+      <!-- Header -->
+      <header class="mb-6 sm:mb-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-sm text-slate-300">ToDoList · Tailwind CSS · CRUDS</p>
+            <h1 class="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">오늘 할 일</h1>
+            <p class="mt-2 text-sm text-slate-300">입력 · 출력 · 수정 · 삭제 · 검색까지 바로 사용해요.</p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+            <div class="flex items-center justify-between gap-6 text-sm">
+              <span class="text-slate-300">진행률</span>
+              <span id="progressText" class="font-medium text-slate-100">0 / 0 완료</span>
+            </div>
+            <div class="mt-2 h-2 w-56 rounded-full bg-white/10">
+              <div id="progressBar" class="h-2 w-0 rounded-full bg-indigo-400"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Card -->
+      <section class="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-soft backdrop-blur sm:p-6">
+        <!-- Input row -->
+        <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <label class="group relative block">
+            <span class="sr-only">할 일 입력</span>
+            <div class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+              </svg>
+            </div>
+            <input
+              id="todoInput"
+              type="text"
+              placeholder="예) 영어 단어 30개 외우기"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950/40 py-3.5 pl-12 pr-4 text-slate-100 placeholder:text-slate-400 outline-none transition focus:border-indigo-400/60 focus:ring-4 focus:ring-indigo-500/15"
+            />
+          </label>
+
+          <button
+            id="addBtn"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-5 py-3.5 font-medium text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/25"
+            aria-label="추가"
+          >
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+            </svg>
+            추가
+          </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="mt-4 flex flex-col gap-3 sm:mt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm text-slate-300">필터</span>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="filter-btn rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-slate-100 ring-1 ring-white/10"
+                data-filter="all"
+              >
+                전체
+              </button>
+              <button
+                type="button"
+                class="filter-btn rounded-full bg-slate-950/30 px-3 py-1.5 text-sm text-slate-300 ring-1 ring-white/10 hover:bg-white/5"
+                data-filter="active"
+              >
+                진행중
+              </button>
+              <button
+                type="button"
+                class="filter-btn rounded-full bg-slate-950/30 px-3 py-1.5 text-sm text-slate-300 ring-1 ring-white/10 hover:bg-white/5"
+                data-filter="completed"
+              >
+                완료
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="relative block">
+              <span class="sr-only">검색</span>
+              <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke-linecap="round" />
+                </svg>
+              </div>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="검색"
+                class="w-full rounded-2xl border border-white/10 bg-slate-950/40 py-2.5 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition focus:border-indigo-400/60 focus:ring-4 focus:ring-indigo-500/15"
+              />
+            </label>
+            <button
+              id="sortBtn"
+              type="button"
+              class="rounded-2xl border border-white/10 bg-slate-950/30 px-3 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+              aria-label="정렬"
+            >
+              최신순
+            </button>
+          </div>
+        </div>
+
+        <!-- List -->
+        <div class="mt-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-medium text-slate-200">목록</h2>
+            <p id="listStats" class="text-sm text-slate-400">총 0개 · 진행중 0 · 완료 0</p>
+          </div>
+
+          <ul id="todoList" class="mt-3 space-y-2"></ul>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-slate-400">팁: 완료 항목은 흐리게 + 취소선으로 표시돼요.</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              id="clearCompletedBtn"
+              type="button"
+              class="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+              aria-label="완료 항목 삭제"
+            >
+              완료 항목 지우기
+            </button>
+            <button
+              id="clearAllBtn"
+              type="button"
+              class="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+              aria-label="전체 삭제"
+            >
+              전체 지우기
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="mt-6 text-center text-xs text-slate-500">
+        <p>© Tailwind CDN · 로컬스토리지 기반 CRUDS</p>
+      </footer>
+    </main>
+
+    <script>//자바스크립트 코드, 로컬스토리지 기반
+      const STORAGE_KEY = "todoListData";
+
+      function loadTodos() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        try {
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return null;
+          return parsed.map((todo) => ({
+            ...todo,
+            createdAt: Number(todo.createdAt) || Date.now(),
+            completed: Boolean(todo.completed),
+          }));
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function saveTodos() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      }
+
+      const seedTodos = [
+        {
+          id: 1,
+          title: "운동 30분 (러닝/스트레칭)",
+          description: "물 충분히 마시기 · 러닝 후 가벼운 스트레칭",
+          category: "건강",
+          dueLabel: "오늘",
+          priority: "높음",
+          completed: false,
+          createdAt: Date.now() - 1000 * 60 * 60 * 2,
+        },
+        
+      ];
+
+      const storedTodos = loadTodos();
+      let todos = storedTodos ?? seedTodos;
+      if (storedTodos === null) saveTodos();
+
+      let nextId = todos.length ? Math.max(...todos.map((todo) => todo.id)) + 1 : 1;
+      let filterState = "all";
+      let searchTerm = "";
+      let sortOrder = "desc";
+      let editingId = null;
+
+      const todoInput = document.getElementById("todoInput");
+      const addBtn = document.getElementById("addBtn");
+      const todoList = document.getElementById("todoList");
+      const listStats = document.getElementById("listStats");
+      const progressText = document.getElementById("progressText");
+      const progressBar = document.getElementById("progressBar");
+      const searchInput = document.getElementById("searchInput");
+      const sortBtn = document.getElementById("sortBtn");
+      const clearCompletedBtn = document.getElementById("clearCompletedBtn");
+      const clearAllBtn = document.getElementById("clearAllBtn");
+      const filterButtons = document.querySelectorAll(".filter-btn");
+
+      const categoryStyles = {
+        건강: "bg-emerald-500/10 text-emerald-200 ring-emerald-500/20",
+        업무: "bg-sky-500/10 text-sky-200 ring-sky-500/20",
+        자기계발: "bg-amber-500/10 text-amber-200 ring-amber-500/20",
+        집: "bg-fuchsia-500/10 text-fuchsia-200 ring-fuchsia-500/20",
+        일반: "bg-white/5 text-slate-300 ring-white/10",
+      };
+
+      function getCategoryClass(category) {
+        return categoryStyles[category] || categoryStyles["일반"];
+      }
+
+      function addTodo() {
+        const title = todoInput.value.trim();
+        if (!title) return;
+
+        todos.unshift({
+          id: nextId++,
+          title,
+          description: "",
+          category: "일반",
+          dueLabel: "오늘",
+          priority: "보통",
+          completed: false,
+          createdAt: Date.now(),
+        });
+        todoInput.value = "";
+        saveTodos();
+        renderList();
+      }
+
+      function updateStats() {
+        const total = todos.length;
+        const completed = todos.filter((todo) => todo.completed).length;
+        const active = total - completed;
+        listStats.textContent = `총 ${total}개 · 진행중 ${active} · 완료 ${completed}`;
+
+        progressText.textContent = `${completed} / ${total} 완료`;
+        const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+        progressBar.style.width = `${percent}%`;
+      }
+
+      function getFilteredTodos() {
+        let result = [...todos];
+        if (filterState === "active") {
+          result = result.filter((todo) => !todo.completed);
+        }
+        if (filterState === "completed") {
+          result = result.filter((todo) => todo.completed);
+        }
+        if (searchTerm) {
+          const keyword = searchTerm.toLowerCase();
+          result = result.filter(
+            (todo) =>
+              todo.title.toLowerCase().includes(keyword) ||
+              todo.description.toLowerCase().includes(keyword)
+          );
+        }
+        result.sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
+        return result;
+      }
+
+      function renderList() {
+        updateStats();
+        const visibleTodos = getFilteredTodos();
+        todoList.innerHTML = "";
+
+        if (visibleTodos.length === 0) {
+          const emptyItem = document.createElement("li");
+          emptyItem.className =
+            "rounded-2xl border border-dashed border-white/10 bg-slate-950/30 p-6 text-center text-sm text-slate-400";
+          emptyItem.textContent = "할 일이 없어요. 새로운 일을 추가해 보세요.";
+          todoList.appendChild(emptyItem);
+          return;
+        }
+
+        visibleTodos.forEach((todo) => {
+          const isCompleted = todo.completed;
+          const li = document.createElement("li");
+          li.className = isCompleted
+            ? "rounded-2xl border border-white/10 bg-slate-950/20 p-4"
+            : "group rounded-2xl border border-white/10 bg-slate-950/30 p-4 transition hover:bg-white/5";
+
+          const titleHtml =
+            editingId === todo.id
+              ? `
+              <div class="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  data-action="edit-input"
+                  data-id="${todo.id}"
+                  class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400/60 focus:ring-4 focus:ring-indigo-500/15"
+                  value="${todo.title.replace(/"/g, "&quot;")}"
+                />
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-action="save"
+                    data-id="${todo.id}"
+                    class="rounded-xl bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white shadow shadow-indigo-500/30 hover:bg-indigo-400"
+                  >
+                    저장
+                  </button>
+                  <button
+                    type="button"
+                    data-action="cancel"
+                    data-id="${todo.id}"
+                    class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-1.5 text-xs text-slate-300 hover:bg-white/5"
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            `
+              : `
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="truncate font-medium ${isCompleted ? "text-slate-300 line-through" : "text-slate-100"}">${
+                  todo.title
+                }</p>
+                <div class="flex items-center gap-2">
+                  ${
+                    todo.category
+                      ? `<span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getCategoryClass(
+                          todo.category
+                        )}">${todo.category}</span>`
+                      : ""
+                  }
+                  ${
+                    todo.dueLabel
+                      ? `<span class="rounded-full bg-white/5 px-2.5 py-1 text-xs text-slate-300 ring-1 ring-white/10">${todo.dueLabel}</span>`
+                      : ""
+                  }
+                  ${
+                    isCompleted
+                      ? `<span class="rounded-full bg-white/5 px-2.5 py-1 text-xs text-slate-400 ring-1 ring-white/10">완료</span>`
+                      : ""
+                  }
+                </div>
+              </div>
+            `;
+
+          const descriptionHtml = todo.description
+            ? `<p class="mt-1 text-sm ${isCompleted ? "text-slate-400 line-through" : "text-slate-300"}">${todo.description}</p>`
+            : "";
+
+          const metaHtml =
+            todo.priority && !isCompleted
+              ? `
+                <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  <span class="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 ring-1 ring-white/10">
+                    <span class="h-1.5 w-1.5 rounded-full bg-indigo-400"></span>
+                    우선순위: ${todo.priority}
+                  </span>
+                </div>
+              `
+              : "";
+
+          li.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="pt-0.5">
+                <input
+                  type="checkbox"
+                  class="h-5 w-5 rounded-md border-white/20 bg-slate-950/30 text-indigo-400 focus:ring-indigo-500/30"
+                  ${isCompleted ? "checked" : ""}
+                  data-action="toggle"
+                  data-id="${todo.id}"
+                  aria-label="완료 체크"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                ${titleHtml}
+                ${descriptionHtml}
+                ${metaHtml}
+              </div>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-slate-950/30 text-slate-${
+                    isCompleted ? "400" : "300"
+                  } transition hover:bg-rose-500/10 hover:text-rose-200"
+                  aria-label="삭제"
+                  title="삭제"
+                  data-action="delete"
+                  data-id="${todo.id}"
+                >
+                  <i class="fa-solid fa-trash-can text-base" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-slate-950/30 text-slate-${
+                    isCompleted ? "400" : "300"
+                  } transition hover:bg-indigo-500/10 hover:text-indigo-200"
+                  aria-label="수정"
+                  title="수정"
+                  data-action="edit"
+                  data-id="${todo.id}"
+                >
+                  <i class="fa-solid fa-pen text-base" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          `;
+
+          todoList.appendChild(li);
+        });
+      }
+
+      function setFilterState(nextFilter) {
+        filterState = nextFilter;
+        filterButtons.forEach((btn) => {
+          const isActive = btn.dataset.filter === nextFilter;
+          btn.className = isActive
+            ? "filter-btn rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-slate-100 ring-1 ring-white/10"
+            : "filter-btn rounded-full bg-slate-950/30 px-3 py-1.5 text-sm text-slate-300 ring-1 ring-white/10 hover:bg-white/5";
+        });
+        renderList();
+      }
+
+      addBtn.addEventListener("click", addTodo);
+      todoInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") addTodo();
+      });
+
+      searchInput.addEventListener("input", (event) => {
+        searchTerm = event.target.value.trim();
+        renderList();
+      });
+
+      sortBtn.addEventListener("click", () => {
+        sortOrder = sortOrder === "desc" ? "asc" : "desc";
+        sortBtn.textContent = sortOrder === "desc" ? "최신순" : "오래된순";
+        renderList();
+      });
+
+      clearCompletedBtn.addEventListener("click", () => {
+        const hasCompleted = todos.some((todo) => todo.completed);
+        if (!hasCompleted) return;
+        for (let i = todos.length - 1; i >= 0; i -= 1) {
+          if (todos[i].completed) todos.splice(i, 1);
+        }
+        if (editingId) editingId = null;
+        saveTodos();
+        renderList();
+      });
+
+      clearAllBtn.addEventListener("click", () => {
+        if (todos.length === 0) return;
+        todos.length = 0;
+        editingId = null;
+        saveTodos();
+        renderList();
+      });
+
+      filterButtons.forEach((btn) => {
+        btn.addEventListener("click", () => setFilterState(btn.dataset.filter));
+      });
+
+      todoList.addEventListener("click", (event) => {
+        const target = event.target.closest("[data-action]");
+        if (!target) return;
+
+        const action = target.dataset.action;
+        const id = Number(target.dataset.id);
+        const todoIndex = todos.findIndex((todo) => todo.id === id);
+        if (todoIndex < 0) return;
+
+        if (action === "toggle") {
+          todos[todoIndex].completed = !todos[todoIndex].completed;
+          saveTodos();
+          renderList();
+          return;
+        }
+
+        if (action === "delete") {
+          todos.splice(todoIndex, 1);
+          if (editingId === id) editingId = null;
+          saveTodos();
+          renderList();
+          return;
+        }
+
+        if (action === "edit") {
+          editingId = id;
+          renderList();
+          const input = todoList.querySelector(`input[data-action="edit-input"][data-id="${id}"]`);
+          if (input) input.focus();
+          return;
+        }
+
+        if (action === "cancel") {
+          editingId = null;
+          renderList();
+          return;
+        }
+
+        if (action === "save") {
+          const input = todoList.querySelector(`input[data-action="edit-input"][data-id="${id}"]`);
+          const value = input ? input.value.trim() : "";
+          if (!value) return;
+          todos[todoIndex].title = value;
+          editingId = null;
+          saveTodos();
+          renderList();
+        }
+      });
+
+      todoList.addEventListener("keydown", (event) => {
+        const input = event.target.closest('input[data-action="edit-input"]');
+        if (!input) return;
+        const id = Number(input.dataset.id);
+        if (event.key === "Enter") {
+          event.preventDefault();
+          const todoIndex = todos.findIndex((todo) => todo.id === id);
+          if (todoIndex < 0) return;
+          const value = input.value.trim();
+          if (!value) return;
+          todos[todoIndex].title = value;
+          editingId = null;
+          saveTodos();
+          renderList();
+        }
+        if (event.key === "Escape") {
+          editingId = null;
+          renderList();
+        }
+      });
+
+      renderList();
+    </script>
+  </body>
+</html>
